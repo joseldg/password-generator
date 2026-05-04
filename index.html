@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Password Pro</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --bg-light: #f8f9ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: #333;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            padding: 40px;
+            width: min(450px, 90vw);
+        }
+
+        h1 {
+            margin: 0 0 25px;
+            font-size: 26px;
+            color: #1a1a1a;
+            text-align: center;
+        }
+
+        .result-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .result {
+            padding: 20px;
+            background: var(--bg-light);
+            border: 2px solid #667eea30;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .strength-meter {
+            height: 4px;
+            width: 0%;
+            background: #ff4d4d;
+            margin-top: 8px;
+            border-radius: 2px;
+            transition: all 0.5s ease;
+        }
+
+        .generate-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        button.primary {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .copy {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .options-toggle {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .options-toggle button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: underline;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .options.show { max-height: 400px; }
+
+        .custom-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 12px;
+            display: none;
+        }
+
+        .custom-section.show { display: block; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Password Generator</h1>
+        
+        <div class="result-container">
+            <div class="result">
+                <span id="passwordDisplay">Click en Generar</span>
+                <button id="copyBtn" class="copy">Copiar</button>
+            </div>
+            <div id="strengthMeter" class="strength-meter"></div>
+        </div>
+
+        <div id="mainActions">
+            <button id="generateBtn" class="primary">Generar Contraseña</button>
+        </div>
+
+        <label style="margin-top: 20px; padding: 10px; background: #f0f2ff; border-radius: 8px;">
+            <input id="customToggle" type="checkbox"> Modo Manual (Escribir propia)
+        </label>
+        
+        <div class="custom-section" id="customInputContainer">
+            <input id="customPassword" type="text" placeholder="Escribe aquí tu contraseña...">
+        </div>
+
+        <div class="options-toggle" id="optionsToggleWrapper">
+            <button id="toggleOptions">⚙️ Ajustes de seguridad</button>
+        </div>
+
+        <div class="options" id="options">
+            <label><input id="uppercase" type="checkbox" checked> Mayúsculas</label>
+            <label><input id="lowercase" type="checkbox" checked> Minúsculas</label>
+            <label><input id="numbers" type="checkbox" checked> Números</label>
+            <label><input id="symbols" type="checkbox" checked> Símbolos</label>
+            <div style="margin-top:10px">
+                <label>Longitud: <b id="lengthValue" style="color:var(--primary)">16</b></label>
+                <input id="length" type="range" min="8" max="50" value="16" style="width:100%">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const elements = {
+            length: document.getElementById('length'),
+            lenVal: document.getElementById('lengthValue'),
+            upper: document.getElementById('uppercase'),
+            lower: document.getElementById('lowercase'),
+            num: document.getElementById('numbers'),
+            sym: document.getElementById('symbols'),
+            cToggle: document.getElementById('customToggle'),
+            cInput: document.getElementById('customPassword'),
+            display: document.getElementById('passwordDisplay'),
+            genBtn: document.getElementById('generateBtn'),
+            copyBtn: document.getElementById('copyBtn'),
+            meter: document.getElementById('strengthMeter'),
+            opts: document.getElementById('options')
+        };
+
+        const charSets = {
+            lower: 'abcdefghijklmnopqrstuvwxyz',
+            upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            num: '0123456789',
+            sym: '!@#$%^&*()_+~`|}{[]:;?><,./-='
+        };
+
+        // Función de generación robusta
+        function generate() {
+            let charset = "";
+            if(elements.upper.checked) charset += charSets.upper;
+            if(elements.lower.checked) charset += charSets.lower;
+            if(elements.num.checked) charset += charSets.num;
+            if(elements.sym.checked) charset += charSets.sym;
+
+            if(!charset) return "Selecciona opciones";
+
+            const len = +elements.length.value;
+            const array = new Uint32Array(len);
+            window.crypto.getRandomValues(array);
+            
+            return Array.from(array, x => charset[x % charset.length]).join('');
+        }
+
+        function updateUI(pass) {
+            elements.display.textContent = pass;
+            // Cálculo simple de fuerza
+            const strength = Math.min((pass.length / 25) * 100, 100);
+            elements.meter.style.width = strength + "%";
+            elements.meter.style.background = strength < 40 ? "#ff4d4d" : strength < 75 ? "#ffd93d" : "#4ade80";
+        }
+
+        // Eventos
+        elements.genBtn.addEventListener('click', () => updateUI(generate()));
+
+        elements.cInput.addEventListener('input', (e) => {
+            if(elements.cToggle.checked) updateUI(e.target.value || "Escribe algo...");
+        });
+
+        elements.cToggle.addEventListener('change', (e) => {
+            const active = e.target.checked;
+            document.getElementById('customInputContainer').classList.toggle('show', active);
+            document.getElementById('mainActions').style.display = active ? 'none' : 'flex';
+            document.getElementById('optionsToggleWrapper').style.display = active ? 'none' : 'block';
+            elements.opts.classList.remove('show');
+            if(active) updateUI(elements.cInput.value || "Esperando entrada...");
+        });
+
+        document.getElementById('toggleOptions').addEventListener('click', (e) => {
+            elements.opts.classList.toggle('show');
+            e.target.textContent = elements.opts.classList.contains('show') ? '⚙️ Ocultar Ajustes' : '⚙️ Ajustes de seguridad';
+        });
+
+        elements.copyBtn.addEventListener('click', async () => {
+            const text = elements.display.textContent;
+            if(text.includes(" ")) return;
+            await navigator.clipboard.writeText(text);
+            const originalText = elements.copyBtn.textContent;
+            elements.copyBtn.textContent = "¡Copiado!";
+            setTimeout(() => elements.copyBtn.textContent = originalText, 1500);
+        });
+
+        elements.length.addEventListener('input', () => elements.lenVal.textContent = elements.length.value);
+    </script>
+</body>
+</html>
